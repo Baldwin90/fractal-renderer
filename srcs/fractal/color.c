@@ -64,38 +64,44 @@ int HSBtoRGB(float hsb[])
 	RETURN_RGB(rgb[0], rgb[1], rgb[2]);
 }
 
-void RGBtoHSB(int r, int g, int b, float *vals)
+typedef union	u_dat
 {
-	float hue, saturation, brightness;
-	int cmax = (r > g) ? r : g;
-	if (b > cmax)
-		cmax = b;
-	int cmin = (r < g) ? r : g;
-	if (b < cmin)
-		cmin = b;
+	int		i;
+	float	f;
+	char	*str;
+} 				t_dat;  
 
-	brightness = ((float) cmax) / 255.0f;
-	if (cmax != 0)
-		saturation = ((float) (cmax - cmin)) / ((float) cmax);
+#define SET_RGBC(r,rv,g,gv,b,bv) SET_RGBV(r,rv);SET_RGBV(g,gv);SET_RGBV(b,bv);
+#define SET_RGBV(idx,vc) (v[idx].f)=((float)(v[0].i-(vc)))/((float)(v[0].i-v[1].i))
+
+void RGBtoHSB(int r, int g, int b, float *hsb)
+{
+	t_dat	v[5];
+
+	v[0].i = (r > g) ? r : g;
+	if (b > v[0].i)
+		v[0].i = b;
+	v[1].i = (r < g) ? r : g;
+	if (b < v[1].i)
+		v[1].i = b;
+	hsb[2] = ((float)v[0].i) / 255.0f;
+	if (v[0].i != 0)
+		hsb[1] = ((float)(v[0].i - v[1].i)) / ((float)v[0].i);
 	else
-		saturation = 0;
-	if (saturation == 0)
-		hue = 0;
-	else {
-		float redc = ((float) (cmax - r)) / ((float) (cmax - cmin));
-		float greenc = ((float) (cmax - g)) / ((float) (cmax - cmin));
-		float bluec = ((float) (cmax - b)) / ((float) (cmax - cmin));
-		if (r == cmax)
-			hue = bluec - greenc;
-		else if (g == cmax)
-			hue = 2.0f + redc - bluec;
+		hsb[1] = 0;
+	if (hsb[1] == 0)
+		hsb[0] = 0;
+	else
+	{
+		SET_RGBC(2, r, 3, g, 4, b);
+		if (r == v[0].i)
+			hsb[0] = v[4].f - v[3].f;
+		else if (g == v[0].i)
+			hsb[0] = 2.0f + v[2].f - v[4].f;
 		else
-			hue = 4.0f + greenc - redc;
-		hue = hue / 6.0f;
-		if (hue < 0)
-			hue = hue + 1.0f;
+			hsb[0] = 4s.0f + v[3].f - v[2].f;
+		hsb[0] = hsb[0] / 6.0f;
+		if (hsb[0] < 0)
+			hsb[0] = hsb[0] + 1.0f;
 	}
-	vals[0] = hue;
-	vals[1] = saturation;
-	vals[2] = brightness;
 }
