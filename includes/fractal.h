@@ -43,8 +43,6 @@ typedef struct	s_thread_params
 	float		end_y;
 }				t_thread_params;
 
-float			lerp_angle(float a, float b, float t);
-void			HSBLerp(float a[], float b[], float t, float *vals);
 int				HSBtoRGB(float hsbvals[]);
 void			RGBtoHSB(int r, int g, int b, float *vals);
 void			draw_mandlebrot(t_mapdata *data);

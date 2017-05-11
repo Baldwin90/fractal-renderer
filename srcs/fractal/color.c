@@ -15,102 +15,64 @@
 #include <libft.h>
 #include <fractal.h>
 
-float lerp_angle(float a, float b, float t)
+#define SET_RGB(r,rv,g,gv,b,bv) *(r)=(rv);*(g)=(gv);*(b)=(bv)
+#define CONVERT(c) ((int)((c) * 255.0f + 0.5f))
+void set_rgb_vals(int *r, int *g, int *b, float x[])
 {
-	float num = (b - a) - floor((b - a) / 360.0f) * 360.0f;
-	if (num > 180.0f)
+	if ((int)x[0] == 0)
 	{
-		num -= 360.0f;
+		SET_RGB(r, CONVERT(x[4]), g, CONVERT(x[3]), b, CONVERT(x[1]));
 	}
-	return a + num * (t - (int) t);
+	else if ((int)x[0] == 1)
+	{
+		SET_RGB(r, CONVERT(x[2]), g, CONVERT(x[4]), b, CONVERT(x[1]));
+	}
+	else if ((int)x[0] == 2)
+	{
+		SET_RGB(r, CONVERT(x[1]), g, CONVERT(x[4]), b, CONVERT(x[3]));
+	}
+	else if ((int)x[0] == 3)
+	{
+		SET_RGB(r, CONVERT(x[1]), g, CONVERT(x[2]), b, CONVERT(x[4]));
+	}
+	else if ((int)x[0] == 4)
+	{
+		SET_RGB(r, CONVERT(x[3]), g, CONVERT(x[1]), b, CONVERT(x[4]));
+	}
+	else if ((int)x[0] == 5)
+	{
+		SET_RGB(r, CONVERT(x[4]), g, CONVERT(x[1]), b, CONVERT(x[2]));
+	}
 }
 
-void HSBLerp(float a[], float b[], float t, float *vals)
-{
-	float h,s;
+#define RETURN_RGB(r,g,b) return (((r)<<16)|((g)<<8)|(b));
+#define RETURN_RGBS(rgb) RETURN_RGB(rgb,rgb,rgb);
 
-	if(a[2]==0){
-		h=b[0];
-		s=b[2];
-	}else if(b[2]==0){
-		h=a[0];
-		s=a[1];
-	}else{
-		if(a[1]==0){
-			h=b[0];
-		}else if(b[2]==0){
-			h=a[0];
-		}else{
-			// works around bug with LerpAngle
-			float angle = lerp_angle(a[0] * 360.0f, b[0] * 360.0f, t);
-			while (angle < 0.0f)
-				angle += 360.0f;
-			while (angle > 360.0f)
-				angle -= 360.0f;
-			h=angle/360.0f;
-		}
-		s= LERP(a[1],b[1],t);
-	}
-	vals[0] = h;
-	vals[1] = s;
-	vals[2] = LERP(a[2], b[2], t);
-}
-
-int HSBtoRGB(float hsbvals[])
+int HSBtoRGB(float hsb[])
 {
-	float hue=hsbvals[0], saturation=hsbvals[1], brightness=hsbvals[2];
-	int r = 0, g = 0, b = 0;
-	if (saturation == 0) {
-		r = g = b = (int) (brightness * 255.0f + 0.5f);
-	} else {
-		float h = (hue - floor(hue)) * 6.0f;
-		float f = h - floor(h);
-		float p = brightness * (1.0f - saturation);
-		float q = brightness * (1.0f - saturation * f);
-		float t = brightness * (1.0f - (saturation * (1.0f - f)));
-		switch ((int) h) {
-			case 0:
-				r = (int) (brightness * 255.0f + 0.5f);
-				g = (int) (t * 255.0f + 0.5f);
-				b = (int) (p * 255.0f + 0.5f);
-				break;
-			case 1:
-				r = (int) (q * 255.0f + 0.5f);
-				g = (int) (brightness * 255.0f + 0.5f);
-				b = (int) (p * 255.0f + 0.5f);
-				break;
-			case 2:
-				r = (int) (p * 255.0f + 0.5f);
-				g = (int) (brightness * 255.0f + 0.5f);
-				b = (int) (t * 255.0f + 0.5f);
-				break;
-			case 3:
-				r = (int) (p * 255.0f + 0.5f);
-				g = (int) (q * 255.0f + 0.5f);
-				b = (int) (brightness * 255.0f + 0.5f);
-				break;
-			case 4:
-				r = (int) (t * 255.0f + 0.5f);
-				g = (int) (p * 255.0f + 0.5f);
-				b = (int) (brightness * 255.0f + 0.5f);
-				break;
-			case 5:
-				r = (int) (brightness * 255.0f + 0.5f);
-				g = (int) (p * 255.0f + 0.5f);
-				b = (int) (q * 255.0f + 0.5f);
-				break;
-		}
-	}
-	return (r << 16) | (g << 8) | (b << 0);
+	int rgb[3];
+	int h;
+	int f;
+
+	if (hsb[1] == 0)
+		RETURN_RGBS((int)(hsb[2] * 255.0f + 0.5f));
+	h = (hsb[0] - floor(hsb[0])) * 6.0f;
+	f = h - floor(h);
+	set_rgb_vals(&rgb[0], &rgb[1], &rgb[2], (float[]) \
+		{h, hsb[2] * (1.0f - hsb[1]), hsb[2] * (1.0f - hsb[1] * f), \
+			hsb[2] * (1.0f - (hsb[1] * (1.0f - f))), hsb[2]});
+	RETURN_RGB(rgb[0], rgb[1], rgb[2]);
 }
 
 void RGBtoHSB(int r, int g, int b, float *vals)
 {
 	float hue, saturation, brightness;
 	int cmax = (r > g) ? r : g;
-	if (b > cmax) cmax = b;
+	if (b > cmax)
+		cmax = b;
 	int cmin = (r < g) ? r : g;
-	if (b < cmin) cmin = b;
+	if (b < cmin)
+		cmin = b;
 
 	brightness = ((float) cmax) / 255.0f;
 	if (cmax != 0)
